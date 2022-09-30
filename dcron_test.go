@@ -2,9 +2,11 @@ package dcron
 
 import (
 	"fmt"
-	"github.com/gomodule/redigo/redis"
-	dredis "github.com/libi/dcron/driver/redis"
+	"github.com/libi/dcron/driver"
+	detcd "github.com/libi/dcron/driver/etcd"
 	"github.com/robfig/cron/v3"
+	clientv3 "go.etcd.io/etcd/client/v3"
+	"go.etcd.io/etcd/tests/v3/integration"
 	"log"
 	"os"
 	"testing"
@@ -22,11 +24,16 @@ func (t TestJob1) Run() {
 var testData = make(map[string]struct{})
 
 func Test(t *testing.T) {
+	integration.BeforeTest(t)
+	var lazyCluster = integration.NewLazyCluster()
+	defer lazyCluster.Terminate()
 
-	drv, _ := dredis.NewDriver(&dredis.Conf{
-		Host: "127.0.0.1",
-		Port: 6379,
-	}, redis.DialConnectTimeout(time.Second*10))
+	endpointsV3 := lazyCluster.EndpointsV3()
+	t.Log(endpointsV3)
+	drv, _ := detcd.NewEtcdDriver(&clientv3.Config{
+		Endpoints:   endpointsV3,
+		DialTimeout: time.Second * 10,
+	})
 
 	go runNode(t, drv)
 	// 间隔1秒启动测试节点刷新逻辑
@@ -40,7 +47,7 @@ func Test(t *testing.T) {
 
 	//panic recover test
 	err := dcron2.AddFunc("s2 test1", "* * * * *", func() {
-		panic("panic test")
+		t.Fatal("panic test")
 	})
 	if err != nil {
 		t.Fatal("add func error")
@@ -70,7 +77,7 @@ func Test(t *testing.T) {
 	//panic recover test
 	err = dcron3.AddFunc("s3 test1", "* * * * *", func() {
 		t.Log("执行 server3 test1 任务,模拟 panic", time.Now().Format("15:04:05"))
-		panic("panic test")
+		t.Fatal("panic test")
 	})
 	if err != nil {
 		t.Fatal("add func error")
@@ -94,7 +101,7 @@ func Test(t *testing.T) {
 	t.Log("testData", testData)
 }
 
-func runNode(t *testing.T, drv *dredis.RedisDriver) {
+func runNode(t *testing.T, drv driver.Driver) {
 	dcron := NewDcron("server1", drv)
 	//添加多个任务 启动多个节点时 任务会均匀分配给各个节点
 

@@ -8,12 +8,28 @@ import (
 	"time"
 )
 
+//	func TestMain(m *testing.M) {
+//		os.Exit(testMain(m))
+//	}
+//
+//	func testMain(m *testing.M) int {
+//		etcd, etcdDir, err := StartEmbeddedEtcd("")
+//		defer CleanEmbeddedEtcd(etcd, etcdDir)
+//		if err != nil {
+//			log.Fatal("Fail to start embed etcd")
+//			os.Exit(1)
+//		}
+//		return m.Run()
+//	}
 func TestEtcdDriver(t *testing.T) {
+	integration.BeforeTest(t)
 	var lazyCluster = integration.NewLazyCluster()
 	defer lazyCluster.Terminate()
 
+	endpointsV3 := lazyCluster.EndpointsV3()
+	t.Log(endpointsV3)
 	ed, err := NewEtcdDriver(&clientv3.Config{
-		Endpoints:   lazyCluster.EndpointsV3(),
+		Endpoints:   endpointsV3,
 		DialTimeout: dialTimeout,
 	})
 
@@ -47,11 +63,16 @@ func TestEtcdDriver(t *testing.T) {
 
 func TestSetHeartBeat(t *testing.T) {
 
+	//var lazyCluster = integration.NewLazyCluster()
+	//defer lazyCluster.Terminate()
+	integration.BeforeTest(t)
 	var lazyCluster = integration.NewLazyCluster()
 	defer lazyCluster.Terminate()
 
+	endpointsV3 := lazyCluster.EndpointsV3()
+	t.Log(endpointsV3)
 	ed, err := NewEtcdDriver(&clientv3.Config{
-		Endpoints:   lazyCluster.EndpointsV3(),
+		Endpoints:   endpointsV3,
 		DialTimeout: dialTimeout,
 	})
 

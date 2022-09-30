@@ -12,7 +12,7 @@ import (
 	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
-var _ driver.Driver = &EtcdDriver{}
+var _ driver.Driver = &Driver{}
 
 const (
 	defaultLease    = 5 // 5 second ttl
@@ -20,7 +20,7 @@ const (
 	businessTimeout = 5 * time.Second
 )
 
-type EtcdDriver struct {
+type Driver struct {
 	cli        *clientv3.Client
 	lease      int64
 	serverList map[string]map[string]string
@@ -28,14 +28,14 @@ type EtcdDriver struct {
 	leaseID    clientv3.LeaseID
 }
 
-//NewEtcdDriver ...
-func NewEtcdDriver(config *clientv3.Config) (*EtcdDriver, error) {
+// NewEtcdDriver ...
+func NewEtcdDriver(config *clientv3.Config) (*Driver, error) {
 	cli, err := clientv3.New(*config)
 	if err != nil {
 		return nil, err
 	}
 
-	ser := &EtcdDriver{
+	ser := &Driver{
 		cli:        cli,
 		serverList: make(map[string]map[string]string, 10),
 	}
@@ -43,22 +43,22 @@ func NewEtcdDriver(config *clientv3.Config) (*EtcdDriver, error) {
 	return ser, nil
 }
 
-//设置key value，绑定租约
-func (s *EtcdDriver) putKeyWithLease(key, val string) (clientv3.LeaseID, error) {
+// 设置key value，绑定租约
+func (d *Driver) putKeyWithLease(key, val string) (clientv3.LeaseID, error) {
 	//设置租约时间，最少5s
-	if s.lease < defaultLease {
-		s.lease = defaultLease
+	if d.lease < defaultLease {
+		d.lease = defaultLease
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), businessTimeout)
 	defer cancel()
 
-	resp, err := s.cli.Grant(ctx, s.lease)
+	resp, err := d.cli.Grant(ctx, d.lease)
 	if err != nil {
 		return 0, err
 	}
 	//注册服务并绑定租约
-	_, err = s.cli.Put(ctx, key, val, clientv3.WithLease(resp.ID))
+	_, err = d.cli.Put(ctx, key, val, clientv3.WithLease(resp.ID))
 	if err != nil {
 		return 0, err
 	}
@@ -66,25 +66,25 @@ func (s *EtcdDriver) putKeyWithLease(key, val string) (clientv3.LeaseID, error) 
 	return resp.ID, nil
 }
 
-func (s *EtcdDriver) randNodeID(serviceName string) (nodeID string) {
+func (d *Driver) randNodeID(serviceName string) (nodeID string) {
 	return getPrefix(serviceName) + uuid.New().String()
 }
 
-//WatchService 初始化服务列表和监视
-func (s *EtcdDriver) watchService(serviceName string) error {
+// WatchService 初始化服务列表和监视
+func (d *Driver) watchService(serviceName string) error {
 	prefix := getPrefix(serviceName)
 	// 根据前缀获取现有的key
-	resp, err := s.cli.Get(context.Background(), prefix, clientv3.WithPrefix())
+	resp, err := d.cli.Get(context.Background(), prefix, clientv3.WithPrefix())
 	if err != nil {
 		return err
 	}
 
 	for _, ev := range resp.Kvs {
-		s.setServiceList(serviceName, string(ev.Key), string(ev.Value))
+		d.setServiceList(serviceName, string(ev.Key), string(ev.Value))
 	}
 
 	// 监视前缀，修改变更的server
-	go s.watcher(serviceName)
+	go d.watcher(serviceName)
 	return nil
 }
 
@@ -93,50 +93,50 @@ func getPrefix(serviceName string) string {
 }
 
 // watcher 监听前缀
-func (s *EtcdDriver) watcher(serviceName string) {
+func (d *Driver) watcher(serviceName string) {
 	prefix := getPrefix(serviceName)
-	rch := s.cli.Watch(context.Background(), prefix, clientv3.WithPrefix())
+	rch := d.cli.Watch(context.Background(), prefix, clientv3.WithPrefix())
 	for wresp := range rch {
 		for _, ev := range wresp.Events {
 			switch ev.Type {
 			case mvccpb.PUT: //修改或者新增
-				s.setServiceList(serviceName, string(ev.Kv.Key), string(ev.Kv.Value))
+				d.setServiceList(serviceName, string(ev.Kv.Key), string(ev.Kv.Value))
 			case mvccpb.DELETE: //删除
-				s.delServiceList(serviceName, string(ev.Kv.Key))
+				d.delServiceList(serviceName, string(ev.Kv.Key))
 			}
 		}
 	}
 }
 
 // setServiceList 新增服务地址
-func (s *EtcdDriver) setServiceList(serviceName, key, val string) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	if nodeMap, ok := s.serverList[serviceName]; !ok {
+func (d *Driver) setServiceList(serviceName, key, val string) {
+	d.lock.Lock()
+	defer d.lock.Unlock()
+	if nodeMap, ok := d.serverList[serviceName]; !ok {
 		nodeMap = map[string]string{
 			key: val,
 		}
-		s.serverList[serviceName] = nodeMap
+		d.serverList[serviceName] = nodeMap
 	} else {
-		s.serverList[serviceName][key] = val
+		d.serverList[serviceName][key] = val
 	}
 }
 
 // DelServiceList 删除服务地址
-func (s *EtcdDriver) delServiceList(serviceName, key string) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	if nodeMap, ok := s.serverList[serviceName]; ok {
+func (d *Driver) delServiceList(serviceName, key string) {
+	d.lock.Lock()
+	defer d.lock.Unlock()
+	if nodeMap, ok := d.serverList[serviceName]; ok {
 		delete(nodeMap, key)
 	}
 }
 
 // GetServices 获取服务地址
-func (s *EtcdDriver) getServices(serviceName string) []string {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
+func (d *Driver) getServices(serviceName string) []string {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
 	addrs := make([]string, 0)
-	if nodeMap, ok := s.serverList[serviceName]; ok {
+	if nodeMap, ok := d.serverList[serviceName]; ok {
 		for _, v := range nodeMap {
 			addrs = append(addrs, v)
 		}
@@ -144,30 +144,30 @@ func (s *EtcdDriver) getServices(serviceName string) []string {
 	return addrs
 }
 
-func (e *EtcdDriver) Ping() error {
+func (d *Driver) Ping() error {
 	return nil
 }
 
-func (e *EtcdDriver) keepAlive(ctx context.Context, nodeID string) (<-chan *clientv3.LeaseKeepAliveResponse, error) {
+func (d *Driver) keepAlive(ctx context.Context, nodeID string) (<-chan *clientv3.LeaseKeepAliveResponse, error) {
 	var err error
-	e.leaseID, err = e.putKeyWithLease(nodeID, nodeID)
+	d.leaseID, err = d.putKeyWithLease(nodeID, nodeID)
 	if err != nil {
 		log.Printf("putKeyWithLease error: %v", err)
 		return nil, err
 	}
 
-	return e.cli.KeepAlive(ctx, e.leaseID)
+	return d.cli.KeepAlive(ctx, d.leaseID)
 }
 
-func (e *EtcdDriver) revoke() {
-	_, err := e.cli.Lease.Revoke(context.Background(), e.leaseID)
+func (d *Driver) revoke() {
+	_, err := d.cli.Lease.Revoke(context.Background(), d.leaseID)
 	if err != nil {
 		log.Printf("lease revoke error: %v", err)
 	}
 }
 
-func (e *EtcdDriver) SetHeartBeat(nodeID string) {
-	leaseCh, err := e.keepAlive(context.Background(), nodeID)
+func (d *Driver) SetHeartBeat(nodeID string) {
+	leaseCh, err := d.keepAlive(context.Background(), nodeID)
 	if err != nil {
 		log.Printf("setHeartBeat error: %v", err)
 		return
@@ -184,8 +184,8 @@ func (e *EtcdDriver) SetHeartBeat(nodeID string) {
 			select {
 			case _, ok := <-leaseCh:
 				if !ok {
-					e.revoke()
-					e.SetHeartBeat(nodeID)
+					d.revoke()
+					d.SetHeartBeat(nodeID)
 					return
 				}
 			case <-time.After(businessTimeout):
@@ -197,23 +197,23 @@ func (e *EtcdDriver) SetHeartBeat(nodeID string) {
 }
 
 // SetTimeout set etcd lease timeout
-func (e *EtcdDriver) SetTimeout(timeout time.Duration) {
-	e.lease = int64(timeout.Seconds())
+func (d *Driver) SetTimeout(timeout time.Duration) {
+	d.lease = int64(timeout.Seconds())
 }
 
 // GetServiceNodeList get service notes
-func (e *EtcdDriver) GetServiceNodeList(serviceName string) ([]string, error) {
-	return e.getServices(serviceName), nil
+func (d *Driver) GetServiceNodeList(serviceName string) ([]string, error) {
+	return d.getServices(serviceName), nil
 }
 
 // RegisterServiceNode register a node to service
-func (e *EtcdDriver) RegisterServiceNode(serviceName string) (string, error) {
-	nodeId := e.randNodeID(serviceName)
-	_, err := e.putKeyWithLease(nodeId, nodeId)
+func (d *Driver) RegisterServiceNode(serviceName string) (string, error) {
+	nodeId := d.randNodeID(serviceName)
+	_, err := d.putKeyWithLease(nodeId, nodeId)
 	if err != nil {
 		return "", err
 	}
-	err = e.watchService(serviceName)
+	err = d.watchService(serviceName)
 	if err != nil {
 		return "", err
 	}
