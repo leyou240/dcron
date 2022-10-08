@@ -4,24 +4,15 @@ import (
 	"github.com/stretchr/testify/require"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.etcd.io/etcd/tests/v3/integration"
-	"os"
 	"testing"
 	"time"
 )
 
-var endpointsV3 []string
-
-func TestMain(m *testing.M) {
-	os.Exit(testMain(m))
-}
-
-func testMain(m *testing.M) int {
-	var lazyCluster = integration.NewLazyCluster()
-	defer lazyCluster.Terminate()
-	endpointsV3 = lazyCluster.EndpointsV3()
-	return m.Run()
-}
 func TestEtcdDriver(t *testing.T) {
+	var lazyCluster = integration.NewLazyCluster()
+	integration.BeforeTest(t)
+	defer lazyCluster.Terminate()
+	endpointsV3 := lazyCluster.EndpointsV3()
 	t.Log(endpointsV3)
 	ed, err := NewEtcdDriver(&clientv3.Config{
 		Endpoints:   endpointsV3,
@@ -57,6 +48,10 @@ func TestEtcdDriver(t *testing.T) {
 }
 
 func TestSetHeartBeat(t *testing.T) {
+	integration.BeforeTest(t)
+	var lazyCluster = integration.NewLazyCluster()
+	defer lazyCluster.Terminate()
+	endpointsV3 := lazyCluster.EndpointsV3()
 	t.Log(endpointsV3)
 	client, err := clientv3.New(clientv3.Config{
 		Endpoints:   endpointsV3,
