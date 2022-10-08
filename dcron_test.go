@@ -91,6 +91,8 @@ func Test(t *testing.T) {
 
 	//测试120秒后退出
 	time.Sleep(120 * time.Second)
+	dcron3.Stop()
+	dcron2.Stop()
 	t.Log("testData", testData)
 }
 
