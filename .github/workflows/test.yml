@@ -17,11 +17,11 @@ jobs:
         env:
           ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
           ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
-  steps:
-    - uses: actions/checkout@v3
-    - name: Set up Go
-      uses: actions/setup-go@v3
-      with:
-        go-version: ${{ matrix.go }}
-    - name: Test
-      run: go test -v ./...
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ matrix.go }}
+      - name: Test
+        run: go test -v ./...
