@@ -4,29 +4,24 @@ import (
 	"github.com/stretchr/testify/require"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.etcd.io/etcd/tests/v3/integration"
+	"os"
 	"testing"
 	"time"
 )
 
-//	func TestMain(m *testing.M) {
-//		os.Exit(testMain(m))
-//	}
-//
-//	func testMain(m *testing.M) int {
-//		etcd, etcdDir, err := StartEmbeddedEtcd("")
-//		defer CleanEmbeddedEtcd(etcd, etcdDir)
-//		if err != nil {
-//			log.Fatal("Fail to start embed etcd")
-//			os.Exit(1)
-//		}
-//		return m.Run()
-//	}
-func TestEtcdDriver(t *testing.T) {
-	integration.BeforeTest(t)
+var endpointsV3 []string
+
+func TestMain(m *testing.M) {
+	os.Exit(testMain(m))
+}
+
+func testMain(m *testing.M) int {
 	var lazyCluster = integration.NewLazyCluster()
 	defer lazyCluster.Terminate()
-
-	endpointsV3 := lazyCluster.EndpointsV3()
+	endpointsV3 = lazyCluster.EndpointsV3()
+	return m.Run()
+}
+func TestEtcdDriver(t *testing.T) {
 	t.Log(endpointsV3)
 	ed, err := NewEtcdDriver(&clientv3.Config{
 		Endpoints:   endpointsV3,
@@ -62,19 +57,13 @@ func TestEtcdDriver(t *testing.T) {
 }
 
 func TestSetHeartBeat(t *testing.T) {
-
-	//var lazyCluster = integration.NewLazyCluster()
-	//defer lazyCluster.Terminate()
-	integration.BeforeTest(t)
-	var lazyCluster = integration.NewLazyCluster()
-	defer lazyCluster.Terminate()
-
-	endpointsV3 := lazyCluster.EndpointsV3()
 	t.Log(endpointsV3)
-	ed, err := NewEtcdDriver(&clientv3.Config{
+	client, err := clientv3.New(clientv3.Config{
 		Endpoints:   endpointsV3,
 		DialTimeout: dialTimeout,
 	})
+	require.Nil(t, err)
+	ed, err := NewDriver(client)
 
 	require.Nil(t, err)
 	serviceName := "testService"

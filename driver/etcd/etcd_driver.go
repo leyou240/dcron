@@ -12,7 +12,7 @@ import (
 	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
-var _ driver.Driver = &Driver{}
+var _ driver.Driver = (*Driver)(nil)
 
 const (
 	defaultLease    = 5 // 5 second ttl
@@ -26,6 +26,15 @@ type Driver struct {
 	serverList map[string]map[string]string
 	lock       sync.RWMutex
 	leaseID    clientv3.LeaseID
+}
+
+// NewDriver 新建etcd的驱动
+func NewDriver(cli *clientv3.Client) (*Driver, error) {
+	ser := &Driver{
+		cli:        cli,
+		serverList: make(map[string]map[string]string, 10),
+	}
+	return ser, nil
 }
 
 // NewEtcdDriver ...
