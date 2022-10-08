@@ -70,7 +70,7 @@ func Test(t *testing.T) {
 	//panic recover test
 	err = dcron3.AddFunc("s3 test1", "* * * * *", func() {
 		t.Log("执行 server3 test1 任务,模拟 panic", time.Now().Format("15:04:05"))
-		t.Fatal("panic test")
+		panic("panic test")
 	})
 	if err != nil {
 		t.Fatal("add func error")
