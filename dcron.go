@@ -2,17 +2,18 @@ package dcron
 
 import (
 	"errors"
-	"github.com/libi/dcron/driver"
-	"github.com/robfig/cron/v3"
 	"log"
 	"os"
 	"time"
+
+	"github.com/leyou240/dcron/driver"
+	"github.com/robfig/cron/v3"
 )
 
 const defaultReplicas = 50
 const defaultDuration = time.Second
 
-//Dcron is main struct
+// Dcron is main struct
 type Dcron struct {
 	jobs       map[string]*JobWarpper
 	ServerName string
@@ -28,7 +29,7 @@ type Dcron struct {
 	crOptions []cron.Option
 }
 
-//NewDcron create a Dcron
+// NewDcron create a Dcron
 func NewDcron(serverName string, driver driver.Driver, cronOpts ...cron.Option) *Dcron {
 	dcron := newDcron(serverName)
 	dcron.crOptions = cronOpts
@@ -37,7 +38,7 @@ func NewDcron(serverName string, driver driver.Driver, cronOpts ...cron.Option) 
 	return dcron
 }
 
-//NewDcronWithOption create a Dcron with Dcron Option
+// NewDcronWithOption create a Dcron with Dcron Option
 func NewDcronWithOption(serverName string, driver driver.Driver, dcronOpts ...Option) *Dcron {
 	dcron := newDcron(serverName)
 	for _, opt := range dcronOpts {
@@ -60,12 +61,12 @@ func newDcron(serverName string) *Dcron {
 	}
 }
 
-//SetLogger set dcron logger
+// SetLogger set dcron logger
 func (d *Dcron) SetLogger(logger *log.Logger) {
 	d.logger = logger
 }
 
-//GetLogger get dcron logger
+// GetLogger get dcron logger
 func (d *Dcron) GetLogger() interface{ Printf(string, ...interface{}) } {
 	return d.logger
 }
@@ -77,12 +78,12 @@ func (d *Dcron) err(format string, v ...interface{}) {
 	d.logger.Printf("ERR: "+format, v...)
 }
 
-//AddJob  add a job
+// AddJob  add a job
 func (d *Dcron) AddJob(jobName, cronStr string, job Job) (err error) {
 	return d.addJob(jobName, cronStr, nil, job)
 }
 
-//AddFunc add a cron func
+// AddFunc add a cron func
 func (d *Dcron) AddFunc(jobName, cronStr string, cmd func()) (err error) {
 	return d.addJob(jobName, cronStr, cmd, nil)
 }
@@ -126,7 +127,7 @@ func (d *Dcron) allowThisNodeRun(jobName string) bool {
 	return d.nodePool.NodeID == allowRunNode
 }
 
-//Start start job
+// Start start job
 func (d *Dcron) Start() {
 	d.isRun = true
 	err := d.nodePool.StartPool()
@@ -153,7 +154,7 @@ func (d *Dcron) Run() {
 
 }
 
-//Stop stop job
+// Stop stop job
 func (d *Dcron) Stop() {
 	d.isRun = false
 	d.cr.Stop()

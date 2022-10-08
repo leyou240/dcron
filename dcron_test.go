@@ -2,8 +2,8 @@ package dcron
 
 import (
 	"fmt"
-	"github.com/libi/dcron/driver"
-	detcd "github.com/libi/dcron/driver/etcd"
+	"github.com/leyou240/dcron/driver"
+	detcd "github.com/leyou240/dcron/driver/etcd"
 	"github.com/robfig/cron/v3"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"log"
