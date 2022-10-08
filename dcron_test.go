@@ -6,7 +6,6 @@ import (
 	detcd "github.com/libi/dcron/driver/etcd"
 	"github.com/robfig/cron/v3"
 	clientv3 "go.etcd.io/etcd/client/v3"
-	"go.etcd.io/etcd/tests/v3/integration"
 	"log"
 	"os"
 	"testing"
@@ -24,14 +23,8 @@ func (t TestJob1) Run() {
 var testData = make(map[string]struct{})
 
 func Test(t *testing.T) {
-	integration.BeforeTest(t)
-	var lazyCluster = integration.NewLazyCluster()
-	defer lazyCluster.Terminate()
-
-	endpointsV3 := lazyCluster.EndpointsV3()
-	t.Log(endpointsV3)
 	drv, _ := detcd.NewEtcdDriver(&clientv3.Config{
-		Endpoints:   endpointsV3,
+		Endpoints:   []string{"127.0.0.1:2379"},
 		DialTimeout: time.Second * 10,
 	})
 
