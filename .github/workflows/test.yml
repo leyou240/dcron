@@ -4,7 +4,11 @@ on: [push, pull_request]
 
 jobs:
   build:
+    strategy:
+      matrix:
+        go: [1.19]
     runs-on: ubuntu-latest
+    name: build
     services:
       etcd:
         image: gcr.io/etcd-development/etcd:v3.5.0
@@ -13,12 +17,11 @@ jobs:
         env:
           ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
           ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
-  tests:
-    steps:
+  steps:
     - uses: actions/checkout@v3
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: 1.19.x
+        go-version: ${{ matrix.go }}
     - name: Test
       run: go test -v ./...
