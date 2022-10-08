@@ -40,7 +40,7 @@ func Test(t *testing.T) {
 
 	//panic recover test
 	err := dcron2.AddFunc("s2 test1", "* * * * *", func() {
-		t.Fatal("panic test")
+		panic("panic test")
 	})
 	if err != nil {
 		t.Fatal("add func error")
