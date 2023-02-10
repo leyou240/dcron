@@ -7,7 +7,7 @@ jobs:
     strategy:
       matrix:
         go: [1.18.x, 1.19.x, 1.20.x]
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # os: [ubuntu-latest, macos-latest, windows-latest]
     name: build
     runs-on: ubuntu-latest #目前只支持ubuntu，因为镜像问题
     services:
