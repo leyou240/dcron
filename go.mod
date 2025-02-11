@@ -5,7 +5,7 @@ go 1.22
 require (
 	github.com/google/uuid v1.6.0
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	go.etcd.io/etcd/api/v3 v3.5.18
 	go.etcd.io/etcd/client/v3 v3.5.18
 	google.golang.org/grpc v1.65.0
