@@ -1,11 +1,13 @@
 module github.com/leyou240/dcron
 
 go 1.23
+toolchain go1.24.1
+
 require (
 	github.com/google/uuid v1.6.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/stretchr/testify v1.10.0
-	go.etcd.io/etcd/api/v3 v3.5.19
+	go.etcd.io/etcd/api/v3 v3.5.20
 	go.etcd.io/etcd/client/v3 v3.5.19
 	google.golang.org/grpc v1.71.0
 )
