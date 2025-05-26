@@ -10,7 +10,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	go.etcd.io/etcd/api/v3 v3.6.0
 	go.etcd.io/etcd/client/v3 v3.6.0
-	google.golang.org/grpc v1.72.1
+	google.golang.org/grpc v1.72.2
 )
 
 require (
