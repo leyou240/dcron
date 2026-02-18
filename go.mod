@@ -6,8 +6,8 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/stretchr/testify v1.11.1
-	go.etcd.io/etcd/api/v3 v3.6.7
-	go.etcd.io/etcd/client/v3 v3.6.7
+	go.etcd.io/etcd/api/v3 v3.6.8
+	go.etcd.io/etcd/client/v3 v3.6.8
 	google.golang.org/grpc v1.78.0
 )
 
@@ -19,7 +19,7 @@ require (
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	go.etcd.io/etcd/client/pkg/v3 v3.6.7 // indirect
+	go.etcd.io/etcd/client/pkg/v3 v3.6.8 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/net v0.47.0 // indirect
